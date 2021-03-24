@@ -1,0 +1,57 @@
+<html>
+<head>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css"/>
+</head>
+<body>
+    <label for="latInput">Latitude</label>
+    <input type="text" id="latInput"/>
+    <label for="lngInput">Longitude</label>
+    <input type="text" id="lngInput"/>
+    <div id="map"></div>
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script>
+    	function addMapPicker() {
+	    	var mapCenter = [22, 87];
+            var map = L.map('map').setView([0.818410,  100.402070], 12);
+			L.tileLayer('https://api.maptiler.com/maps/topographique/{z}/{x}/{y}.png?key=bgISsnxrAiRak6OLsnfO', {
+				maxZoom: 18,
+				attribution: ''
+			}).addTo(map);
+		
+		var marker = L.marker(mapCenter).addTo(map);
+		var updateMarker = function(lat, lng) {
+		    marker
+		        .setLatLng([lat, lng])
+		        .bindPopup("Your location :  " + marker.getLatLng().toString())
+		        .openPopup();
+		    return false;
+		};
+		map.on('click', function(e) {
+		    $('#latInput').val(e.latlng.lat);
+		    $('#lngInput').val(e.latlng.lng);
+		    updateMarker(e.latlng.lat, e.latlng.lng);
+	    	});
+	    	
+	    	var updateMarkerByInputs = function() {
+			return updateMarker( $('#latInput').val() , $('#lngInput').val());
+		}
+		$('#latInput').on('input', updateMarkerByInputs);
+		$('#lngInput').on('input', updateMarkerByInputs);
+    	}
+    	
+	$(document).ready(function() {
+	    addMapPicker();
+	});
+    </script>
+    <style>
+		input {
+		    margin-bottom : 2px;
+		}
+		#map {
+		    width : 600px;
+		    height : 400px;
+		}
+    </style>
+<body>
+</html>

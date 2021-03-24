@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Webmap 201</title>
+    <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+    <link rel="stylesheet" href="vendor/plugins/L.Control.Pan.css">
+    <link rel="stylesheet" href="vendor/plugins/L.Control.Zoomslider.css">
+    <link rel="stylesheet" href="vendor/plugins/L.Control.MousePosition.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta2/css/bootstrap.min.css"
+        integrity="sha512-aqT9YD5gLuLBr6ipQAS+72o5yHKzgZbGxEh6iY8lW/r6gG14e2kBTAJb8XrxzZrMOgSmDqtLaF76T0Z6YY2IHg=="
+        crossorigin="anonymous" />
+
+        <!-- Polyline measure -->
+        <link rel="stylesheet" href="https://ppete2.github.io/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.css" />
+
+        <!-- Easy Button -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.css">
+
+
+    <style>
+        #mapdiv {
+            height: 98vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="row vw-100 vh-100 p-2">
+        <div id="side-bar" class="col-md-3">
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5>Zoom Level: <span id="zoom-level"></span></h5>
+                    <h5>Map Center: <span id="map-center"></span></h5>
+                    <h5>Mouse Location: <span id="mouse-loc"></span></h5>
+                    <div class="d-flex flex-row">
+                        <button class="btn btn-primary mr-2" id="locatebtn">Locate Me</button>
+                        <button class="btn btn-info" id="puprbtn">Kantor PUPR</button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+        <div id="mapdiv" class="col-md-9"></div>
+    </div>
+
+
+    <script src="vendor/leaflet/leaflet.js"></script>
+    <script src="vendor/plugins/L.Control.Pan.js"></script>
+    <script src="vendor/plugins/L.Control.Zoomslider.js"></script>
+    <script src="vendor/plugins/L.Control.MousePosition.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+        integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.0-beta2/js/bootstrap.min.js"
+        integrity="sha512-7PEMaoHJNQoEqpxgkKskoXpEglioEnKlfCMcYVmml8yJjmBG7twaBmnI+PLU0cNTw2VWhizJYUG1kmSzRDo1tw=="
+        crossorigin="anonymous"></script>
+        <script src="https://ppete2.github.io/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
+
+    <script>
+        var mymap;
+        var lyrOSM;
+        var currentLoc, puprLoc;
+        var popPupr, popExample;
+        var ctlZoom, ctlAttr, ctlScale, ctlPan, ctlZoomslider, ctlMousePos, ctlMeasure, ctlEasy;
+
+        $(document).ready(function () {
+            mymap = L.map('mapdiv', { center: [19.4, -99.2], zoom: 13, zoomControl: false, attributionControl: false });
+            lyrOSM = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
+
+            mymap.addLayer(lyrOSM);
+
+            //Map Control Toolbar
+            //ctlZoom = L.control.zoom({ zoomInText: '+', zoomOutText: '-', position: 'topright' }).addTo(mymap);
+            ctlScale = L.control.scale({ position: 'bottomleft', imperial: false, maxWidth: 200 }).addTo(mymap);
+            ctlAttr = L.control.attribution({ position: 'bottomright' }).addTo(mymap);
+            ctlAttr.addAttribution('Harry');
+            ctlAttr.addAttribution("&copy; <a href='https://sitaba.pu.go.id' target='_blank'>SITABA PUPR</a>");
+            ctlPan = L.control.pan().addTo(mymap);
+            ctlZoomslider = L.control.zoomslider({ position: 'topright' }).addTo(mymap);
+            ctlMousePos = L.control.mousePosition().addTo(mymap);
+
+            //Polyline Measure
+            ctlMeasure = L.control.polylineMeasure({position: 'topleft', units: 'metres'}).addTo(mymap);
+
+            //Easy Button
+            ctlEasy = L.easyButton('fa-globe', function(btn,map) {
+                map.locate();
+            }).addTo(mymap);
+
+            popPupr = L.popup({ maxWidth: 300, keepInView: true });
+            popPupr.setLatLng([-6.2362433, 106.8012836]);
+            popPupr.setContent("<h4>Kementerian PUPR</h4><img class='img-responsive' src='./images/pupr.jpg' width='300px' />");
+
+            mymap.on('contextmenu', function (e) {
+                let curTime = new Date();
+                L.marker(e.latlng).addTo(mymap).bindPopup(e.latlng.toString() + "<br>" + curTime.toString())
+            });
+
+            mymap.on('keypress', function (e) {
+                if (e.originalEvent.key == "l") {
+                    mymap.locate();
+                }
+            });
+
+            mymap.on('locationfound', function (e) {
+                if (currentLoc) {
+                    currentLoc.remove();
+                }
+                currentLoc = L.circleMarker(e.latlng).addTo(mymap);
+                mymap.setView(e.latlng, 14);
+            });
+
+            mymap.on('locationerror', function (e) {
+                alert("Location not found");
+            });
+
+            mymap.on('zoomend', function () {
+                $("#zoom-level").html(mymap.getZoom());
+            });
+
+            mymap.on('moveend', function () {
+                $("#map-center").html(LatLngToArrayString(mymap.getCenter()));
+            });
+
+            mymap.on('mousemove', function (e) {
+                $("#mouse-loc").html(LatLngToArrayString(e.latlng));
+            });
+
+            $("#locatebtn").click(function () {
+                mymap.locate();
+            })
+
+            $("#puprbtn").click(function () {
+
+                if (puprLoc) {
+                    puprLoc.remove();
+                }
+                puprloc = L.marker([-6.2362433, 106.8012836]).addTo(mymap);
+                mymap.setView([-6.2362433, 106.8012836], 17);
+                mymap.openPopup(popPupr);
+            })
+        });
+
+        function LatLngToArrayString(ll) {
+            return "[" + ll.lat.toFixed(5) + "," + ll.lng.toFixed(5) + "]";
+        }
+    </script>
+</body>
+
+</html>
